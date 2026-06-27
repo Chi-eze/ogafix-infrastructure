@@ -1,0 +1,10 @@
+aws_region           = "eu-west-1"
+environment          = "production"
+db_instance_class    = "db.t3.micro"
+db_allocated_storage = 20
+db_name              = "ogafix"
+db_username          = "ogafixadmin"
+db_password          = "OgaFix@2024Secure!" # CHANGE THIS IN PRODUCTION
+db_multi_az          = false
+skip_final_snapshot  = true
+s3_bucket_name       = "ogafix-images-prod-eu-west-1"
