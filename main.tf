@@ -289,7 +289,7 @@ resource "aws_cloudfront_distribution" "ogafix" {
 resource "aws_lightsail_instance" "ogafix_api" {
   name              = "ogafix-api"
   availability_zone = data.aws_availability_zones.available.names[0]
-  blueprint_id      = "nodejs_18"  # Node.js 18 blueprint
+  blueprint_id      = "ubuntu_22_04"  # Ubuntu 22.04 LTS
   bundle_id         = "nano_3_0"   # Nano plan: $5/month
   key_pair_name     = aws_lightsail_key_pair.ogafix.name
 
