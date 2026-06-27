@@ -285,6 +285,50 @@ resource "aws_cloudfront_distribution" "ogafix" {
   }
 }
 
+# IAM Role for EC2 to access Parameter Store
+resource "aws_iam_role" "ec2_parameter_store_role" {
+  name = "ogafix-ec2-parameter-store-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "ec2_parameter_store_policy" {
+  name = "ogafix-ec2-parameter-store-policy"
+  role = aws_iam_role.ec2_parameter_store_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters"
+        ]
+        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/ogafix/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_instance_profile" "ec2_parameter_store_profile" {
+  name = "ogafix-ec2-parameter-store-profile"
+  role = aws_iam_role.ec2_parameter_store_role.name
+}
+
+data "aws_caller_identity" "current" {}
+
 # EC2 Instance for Backend API (in VPC public subnet)
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -308,6 +352,7 @@ resource "aws_instance" "ogafix_api" {
   vpc_security_group_ids = [aws_security_group.lightsail.id]
   key_name               = aws_key_pair.ogafix.key_name
   associate_public_ip_address = true
+  iam_instance_profile   = aws_iam_instance_profile.ec2_parameter_store_profile.name
 
   tags = {
     Name = "ogafix-api"
