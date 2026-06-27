@@ -285,13 +285,29 @@ resource "aws_cloudfront_distribution" "ogafix" {
   }
 }
 
-# AWS Lightsail Instance for Backend API
-resource "aws_lightsail_instance" "ogafix_api" {
-  name              = "ogafix-api"
-  availability_zone = data.aws_availability_zones.available.names[0]
-  blueprint_id      = "ubuntu_22_04"  # Ubuntu 22.04 LTS
-  bundle_id         = "nano_3_0"   # Nano plan: $5/month
-  key_pair_name     = aws_lightsail_key_pair.ogafix.name
+# EC2 Instance for Backend API (in VPC public subnet)
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"]  # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+resource "aws_instance" "ogafix_api" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t3.micro"  # Free tier eligible
+  subnet_id              = aws_subnet.public_1.id
+  vpc_security_group_ids = [aws_security_group.lightsail.id]
+  key_name               = aws_key_pair.ogafix.key_name
+  associate_public_ip_address = true
 
   tags = {
     Name = "ogafix-api"
@@ -300,20 +316,22 @@ resource "aws_lightsail_instance" "ogafix_api" {
   depends_on = [aws_db_instance.ogafix]
 }
 
-# Generate SSH key pair for Lightsail
-resource "aws_lightsail_key_pair" "ogafix" {
-  name = "ogafix-key"
+# SSH Key Pair for EC2
+resource "aws_key_pair" "ogafix" {
+  key_name   = "ogafix-key"
+  public_key = file("~/.ssh/id_rsa.pub")
 }
 
-# Static IP for Lightsail instance
-resource "aws_lightsail_static_ip" "ogafix_api" {
-  name = "ogafix-api-static-ip"
-}
+# Elastic IP for EC2 instance
+resource "aws_eip" "ogafix_api" {
+  instance = aws_instance.ogafix_api.id
+  domain   = "vpc"
 
-# Attach static IP to instance
-resource "aws_lightsail_static_ip_attachment" "ogafix_api" {
-  static_ip_name    = aws_lightsail_static_ip.ogafix_api.name
-  instance_name     = aws_lightsail_instance.ogafix_api.name
+  tags = {
+    Name = "ogafix-api-eip"
+  }
+
+  depends_on = [aws_internet_gateway.ogafix]
 }
 
 # AWS Systems Manager Parameter Store for Secrets
@@ -423,23 +441,17 @@ output "ssm_parameter_db_name" {
   description = "Parameter Store path for database name"
 }
 
-output "lightsail_instance_public_ip" {
-  value       = aws_lightsail_static_ip.ogafix_api.ip_address
-  description = "Lightsail instance public IP address"
+output "ec2_instance_public_ip" {
+  value       = aws_eip.ogafix_api.public_ip
+  description = "EC2 instance Elastic IP address"
 }
 
-output "lightsail_instance_name" {
-  value       = aws_lightsail_instance.ogafix_api.name
-  description = "Lightsail instance name"
+output "ec2_instance_id" {
+  value       = aws_instance.ogafix_api.id
+  description = "EC2 instance ID"
 }
 
-output "lightsail_key_pair_name" {
-  value       = aws_lightsail_key_pair.ogafix.name
-  description = "Lightsail SSH key pair name"
-}
-
-output "lightsail_key_pair_private_key" {
-  value       = aws_lightsail_key_pair.ogafix.private_key
-  description = "Lightsail SSH private key (save this securely)"
-  sensitive   = true
+output "ec2_key_pair_name" {
+  value       = aws_key_pair.ogafix.key_name
+  description = "EC2 SSH key pair name"
 }
