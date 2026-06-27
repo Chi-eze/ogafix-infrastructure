@@ -207,7 +207,7 @@ resource "aws_db_instance" "ogafix" {
   skip_final_snapshot     = var.skip_final_snapshot
   multi_az                = var.db_multi_az
   publicly_accessible     = false
-  backup_retention_period = 7
+  backup_retention_period = 1
 
   tags = {
     Name = "ogafix-db"
@@ -234,27 +234,12 @@ resource "aws_s3_bucket_versioning" "ogafix_images" {
 resource "aws_s3_bucket_public_access_block" "ogafix_images" {
   bucket = aws_s3_bucket.ogafix_images.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 
-resource "aws_s3_bucket_policy" "ogafix_images" {
-  bucket = aws_s3_bucket.ogafix_images.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "PublicReadGetObject"
-        Effect = "Allow"
-        Principal = "*"
-        Action   = "s3:GetObject"
-        Resource = "${aws_s3_bucket.ogafix_images.arn}/*"
-      }
-    ]
-  })
+  depends_on = [aws_s3_bucket.ogafix_images]
 }
 
 # CloudFront Distribution
