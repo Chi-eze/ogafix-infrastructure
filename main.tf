@@ -285,6 +285,57 @@ resource "aws_cloudfront_distribution" "ogafix" {
   }
 }
 
+# AWS Systems Manager Parameter Store for Secrets
+resource "aws_ssm_parameter" "db_password" {
+  name  = "/ogafix/db/password"
+  type  = "SecureString"
+  value = var.db_password
+
+  tags = {
+    Name = "ogafix-db-password"
+  }
+}
+
+resource "aws_ssm_parameter" "db_username" {
+  name  = "/ogafix/db/username"
+  type  = "String"
+  value = var.db_username
+
+  tags = {
+    Name = "ogafix-db-username"
+  }
+}
+
+resource "aws_ssm_parameter" "db_host" {
+  name  = "/ogafix/db/host"
+  type  = "String"
+  value = aws_db_instance.ogafix.address
+
+  tags = {
+    Name = "ogafix-db-host"
+  }
+}
+
+resource "aws_ssm_parameter" "db_port" {
+  name  = "/ogafix/db/port"
+  type  = "String"
+  value = tostring(aws_db_instance.ogafix.port)
+
+  tags = {
+    Name = "ogafix-db-port"
+  }
+}
+
+resource "aws_ssm_parameter" "db_name" {
+  name  = "/ogafix/db/name"
+  type  = "String"
+  value = var.db_name
+
+  tags = {
+    Name = "ogafix-db-name"
+  }
+}
+
 # Outputs
 output "rds_endpoint" {
   value       = aws_db_instance.ogafix.endpoint
@@ -314,4 +365,29 @@ output "vpc_id" {
 output "security_group_lightsail_id" {
   value       = aws_security_group.lightsail.id
   description = "Security group ID for Lightsail"
+}
+
+output "ssm_parameter_db_password" {
+  value       = aws_ssm_parameter.db_password.name
+  description = "Parameter Store path for database password"
+}
+
+output "ssm_parameter_db_username" {
+  value       = aws_ssm_parameter.db_username.name
+  description = "Parameter Store path for database username"
+}
+
+output "ssm_parameter_db_host" {
+  value       = aws_ssm_parameter.db_host.name
+  description = "Parameter Store path for database host"
+}
+
+output "ssm_parameter_db_port" {
+  value       = aws_ssm_parameter.db_port.name
+  description = "Parameter Store path for database port"
+}
+
+output "ssm_parameter_db_name" {
+  value       = aws_ssm_parameter.db_name.name
+  description = "Parameter Store path for database name"
 }
