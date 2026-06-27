@@ -204,10 +204,10 @@ resource "aws_db_instance" "ogafix" {
   password                = var.db_password
   db_subnet_group_name    = aws_db_subnet_group.ogafix.name
   vpc_security_group_ids  = [aws_security_group.rds.id]
-  skip_final_snapshot     = var.skip_final_snapshot
-  multi_az                = var.db_multi_az
+  skip_final_snapshot     = true
+  multi_az                = false
   publicly_accessible     = false
-  backup_retention_period = 1
+  backup_retention_period = 0
 
   tags = {
     Name = "ogafix-db"
