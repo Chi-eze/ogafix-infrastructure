@@ -285,6 +285,32 @@ resource "aws_cloudfront_distribution" "ogafix" {
   }
 }
 
+# AWS Lightsail Instance for Backend API
+resource "aws_lightsail_instance" "ogafix_api" {
+  name              = "ogafix-api"
+  availability_zone = data.aws_availability_zones.available.names[0]
+  blueprint_id      = "nodejs_18"  # Node.js 18 blueprint
+  bundle_id         = "nano_3_0"   # Nano plan: $5/month
+  key_pair_name     = aws_lightsail_key_pair.ogafix.name
+
+  tags = {
+    Name = "ogafix-api"
+  }
+
+  depends_on = [aws_db_instance.ogafix]
+}
+
+# Generate SSH key pair for Lightsail
+resource "aws_lightsail_key_pair" "ogafix" {
+  name = "ogafix-key"
+}
+
+# Static IP for Lightsail instance
+resource "aws_lightsail_static_ip" "ogafix_api" {
+  name          = "ogafix-api-static-ip"
+  instance_name = aws_lightsail_instance.ogafix_api.name
+}
+
 # AWS Systems Manager Parameter Store for Secrets
 resource "aws_ssm_parameter" "db_password" {
   name  = "/ogafix/db/password"
@@ -390,4 +416,25 @@ output "ssm_parameter_db_port" {
 output "ssm_parameter_db_name" {
   value       = aws_ssm_parameter.db_name.name
   description = "Parameter Store path for database name"
+}
+
+output "lightsail_instance_public_ip" {
+  value       = aws_lightsail_static_ip.ogafix_api.ip_address
+  description = "Lightsail instance public IP address"
+}
+
+output "lightsail_instance_name" {
+  value       = aws_lightsail_instance.ogafix_api.name
+  description = "Lightsail instance name"
+}
+
+output "lightsail_key_pair_name" {
+  value       = aws_lightsail_key_pair.ogafix.name
+  description = "Lightsail SSH key pair name"
+}
+
+output "lightsail_key_pair_private_key" {
+  value       = aws_lightsail_key_pair.ogafix.private_key
+  description = "Lightsail SSH private key (save this securely)"
+  sensitive   = true
 }
