@@ -307,8 +307,13 @@ resource "aws_lightsail_key_pair" "ogafix" {
 
 # Static IP for Lightsail instance
 resource "aws_lightsail_static_ip" "ogafix_api" {
-  name          = "ogafix-api-static-ip"
-  instance_name = aws_lightsail_instance.ogafix_api.name
+  name = "ogafix-api-static-ip"
+}
+
+# Attach static IP to instance
+resource "aws_lightsail_static_ip_attachment" "ogafix_api" {
+  static_ip_name    = aws_lightsail_static_ip.ogafix_api.name
+  instance_name     = aws_lightsail_instance.ogafix_api.name
 }
 
 # AWS Systems Manager Parameter Store for Secrets
