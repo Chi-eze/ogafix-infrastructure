@@ -319,7 +319,7 @@ resource "aws_instance" "ogafix_api" {
 # SSH Key Pair for EC2
 resource "aws_key_pair" "ogafix" {
   key_name   = "ogafix-key"
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = file(pathexpand("~/.ssh/id_rsa.pub"))
 }
 
 # Elastic IP for EC2 instance
