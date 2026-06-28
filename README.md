@@ -150,6 +150,39 @@ Access images via CloudFront:
 https://d123456.cloudfront.net/portfolios/image.jpg
 ```
 
+## Website HTTPS (Let's Encrypt — free)
+
+HTTPS runs on the EC2 nginx server using **Let's Encrypt** via Certbot. There is **no extra AWS cost** (no Route 53, no CloudFront for the website).
+
+- Certificate covers `ogafix.work` and `www.ogafix.work`
+- **Auto-renewal:** `certbot.timer` renews the certificate before expiry (no manual work)
+- DNS stays on **GoDaddy** — keep the A record pointing to the EC2 Elastic IP
+
+### Architecture
+
+```
+Browser → EC2 nginx (HTTPS, Let's Encrypt) → static site + /api proxy
+```
+
+### Renew / check certificate
+
+```bash
+sudo certbot certificates
+sudo certbot renew --dry-run
+```
+
+### nginx configuration
+
+Reference configs are in `nginx/`:
+
+- `ogafix.letsencrypt.conf` — HTTPS site, `/api/` and `/socket.io/` proxy to Node on port 3000
+
+Copy to the server and reload nginx after changes:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
 ## Destroying Infrastructure
 
 To remove all AWS resources (use with caution):
